@@ -1,0 +1,21 @@
+{
+    "name": "Go Development Environment",
+    "image": "golang",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "golang.go", // Go extension for VS Code
+                "ms-vscode.cpptools" // Optional: C++ tools for debugging
+            ],
+            "settings": {
+                "go.toolsManagement.autoUpdate": true,
+                "go.lintOnSave": "package",
+                "go.useLanguageServer": true
+            }
+        }
+    },
+    "remoteUser": "root",
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+    ]
+}
