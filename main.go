@@ -1,66 +1,39 @@
 package main
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/gocolly/colly"
+	"log"
+	"net/http"
 )
 
-func removeEmptyStrings(slice []string) []string {
-	var result []string
-	for _, str := range slice {
-		if str != "" {
-			if !strings.HasPrefix(str, "with") {
-				result = append(result, str)
-			}
-		}
-
+func home(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
 	}
-	return result
+
+	w.Write([]byte("Hello, World!"))
 }
 
-type Book_format struct {
-	Title  string `json:"title"`
-	Author string `json:"author"`
+func snippetView(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display a specific snippet!"))
+}
+func snippetCreate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Write([]byte("Create a new snippet!"))
 }
 
 func main() {
-	// Instantiate default collector
-	c := colly.NewCollector(
-		colly.AllowedDomains("thestorygraph.com", "app.thestorygraph.com"),
-	)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", home)
+	mux.HandleFunc("/snippet/view", snippetView)
+	mux.HandleFunc("/snippet/create", snippetCreate)
 
-	// On every a element which has href attribute call callback
-	c.OnHTML(".book-title-author-and-series", func(e *colly.HTMLElement) {
-		// Splits the text by spaces
-		var books []string = strings.Split(e.Text, "              ")
 
-		// Remove all the extra spaces
-		for i, book := range books {
-			books[i] = strings.TrimSpace(strings.ReplaceAll(book, "   ", ""))
-		}
-
-		// Remove empty strings and the ones that start with "with"
-		cleaned_books := removeEmptyStrings(books)
-
-		// Assign the first element to Title and the last element to Author
-		book := Book_format{Title: cleaned_books[0], Author: cleaned_books[len(cleaned_books)-1]}
-
-		// Print the book details
-		fmt.Printf("%s\n", book)
-		fmt.Printf("Title: %s\n", book.Title)
-		fmt.Printf("Author: %s\n", book.Author)
-	})
-
-	// Before making a request print "Visiting ..."
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL.String())
-	})
-
-	// Start scraping on https://hackerspaces.org
-	c.Visit("https://app.thestorygraph.com/to-read/camfurbush")
-
-	// ToDo Remove duplicate responses
-
+	log.Println("Starting server on :4000")
+	err := http.ListenAndServe(":4000", mux)
+	log.Fatal(err)
 }
